@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Orçamento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .item-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .item-container input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .item-container input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        .add-item-btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .add-item-btn:hover {
+            background-color: #0056b3;
+        }
+        #total {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: right;
+        }
+        #export-btn {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #export-btn:hover {
+            background-color: #218838;
+        }
+        #update-total-btn {
+            background-color: #ffc107;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #update-total-btn:hover {
+            background-color: #e0a800;
+        }
+        .pdf-content {
+            width: 210mm;
+            height: 297mm;
+            background-color: #fff;
+            color: #000;
+            font-size: 16pt;
+            margin-top: 82px;
+        }
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pdf-header h2, .pdf-header h3 {
+            margin: 0;
+        }
+        .pdf-section {
+            margin-bottom: 5px;
+            background: #DFDBDB;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #A9ABAE; /* Adicionando uma borda sólida de 1px */
+            margin: 5px;
+        }
+        .pdf-section-descorc {
+            height: 43.8vh;
+            margin-bottom: 5px;
+            background: #DFDBDB;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #A9ABAE;
+            margin: 5px;
+        }
+        .pdf-section h3 {
+            margin: 0 0 5px 0;
+        }
+        .pdf-section p {
+            margin: 5px 0;
+        }
+        .pdf-items {
+            margin-bottom: 20px;
+        }
+        .pdf-items p {
+            margin: 2px 0;
+        }
+        .pdf-separator {
+            border-bottom: 10px solid #dc3545;
+            width: 100%;
+        }
+        .pdf-block {
+            margin: 5px;
+        }
+        .pdf-block h3 {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .pdf-block p {
+            text-align: left;
+            margin: 2px 0;
+        }
+        .pdf-block2 {
+            text-align: center;
+            margin: 0;
+        }
+        .pdf-block3 {
+            text-align: right;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Sistema de Orçamento</h2>
+            <p>Preencha os detalhes abaixo:</p>
+        </div>
+        <div>
+            <label for="tipo">Tipo:</label>
+            <select id="tipo">
+                <option value="Serviço">Serviço</option>
+                <option value="Material">Material</option>
+            </select>
+            <label for="cliente">Nome do Cliente:</label>
+            <input type="text" id="cliente" required>
+            <label for="telefone">Telefone:</label>
+            <input type="tel" id="telefone" required>
+            <label for="endereco">Endereço:</label>
+            <input type="text" id="endereco" required>
+
+            <div id="itens">
+                <div class="item-container">
+                    <input type="checkbox" class="has-value" onchange="toggleValorInput(this)">
+                    <input type="text" class="item" placeholder="Descrição do Item">
+                    <input type="number" class="valor" placeholder="Valor (R$)" disabled>
+                </div>
+            </div>
+            <button class="add-item-btn" onclick="addLine()"><i class="fas fa-plus"></i> Adicionar Item</button>
+
+            <label for="observacoes">Observações:</label>
+            <textarea id="observacoes" rows="4" placeholder="Digite suas observações"></textarea>
+
+            <div id="total">
+                <label for="valorTotal">Valor Total:</label>
+                <input type="number" id="valorTotal" step="0.01" placeholder="Digite o valor total">
+                <button id="update-total-btn" onclick="updateTotal()"><i class="fas fa-sync-alt"></i> Atualizar Total</button>
+            </div>
+            <button id="export-btn" onclick="previewPDF()">Preview</button>
+            <button id="export-btn" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> Exportar para PDF</button>
+            <button id="export-btn" onclick="sharePDF()">Compartilhar PDF</button>
+        </div>
+    </div>
+
+    <div id="pdf-content" class="pdf-content" style="display: none;">
+        <div class="pdf-block">
+            <div class="pdf-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <img src="Artes/Simbolo.png" alt="Logo" style="width: 50px; height: 50px; margin-right: 10px;">
+                    <div>
+                        <h2 style="margin: 0;">Richter Construções</h2>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="margin: 0; margin-top: 10px; font-size: 26pt;">Orçamento de <span id="pdf-title"></span></h3>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <p style="margin: 0; margin-right: 3.903mm; font-size: 13pt;">Data: <span id="pdf-date"></span></p>
+                        <p style="margin: 0; font-size: 13pt;">Válido por 15 dias.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="pdf-separator"></div>
+        <div class="pdf-block">
+            <div class="pdf-section">
+                <h3 style="font-size: 9pt; font-weight: normal; margin: 0px;">Dados do Cliente</h3>
+                <p>Nome: <span id="pdf-cliente"></span></p>
+                <p>Telefone: <span id="pdf-telefone"></span></p>
+                <p>Endereço: <span id="pdf-endereco"></span></p>
+            </div>
+        </div>
+        <div class="pdf-block">
+            <div class="pdf-section-descorc" style="height: 43,8%;"> 
+                <h3 style="font-size: 9pt; font-weight: normal; margin: 0px;">Descrição do Orçamento</h3>
+                <div id="pdf-itens" class="pdf-items"></div>
+            </div>
+            <div class="pdf-section">
+                <h3 style="text-align: right; font-size: 20px;">Total: R$ <span id="pdf-total"></span></h3>
+            </div>
+        </div>
+        <div class="pdf-block">
+            <div class="pdf-section" style="height: 12vh;">
+                <h3 style="font-size: 9pt; font-weight: normal; margin: 0px;">Observações</h3>
+                <p id="pdf-observacoes"></p>
+            </div>
+        </div>
+        <div class="pdf-separator"></div>
+        <div class="pdf-block2">
+            <div>
+                <p>Entre em contato por whatsapp ou ligação;</p>
+                <p>(51) 9 972792797</p>
+                <p>Orçamento válido por 15 dias.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        function addLine() {
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('item-container');
+            itemDiv.innerHTML = `
+                <input type="checkbox" class="has-value" onchange="toggleValorInput(this)">
+                <input type="text" class="item" placeholder="Descrição do Item">
+                <input type="number" class="valor" placeholder="Valor (R$)" disabled>
+            `;
+            document.getElementById('itens').appendChild(itemDiv);
+        }
+    
+        function toggleValorInput(checkbox) {
+            const valorInput = checkbox.nextElementSibling.nextElementSibling;
+            valorInput.disabled = !checkbox.checked;
+            if (!checkbox.checked) {
+                valorInput.value = '';
+            }
+        }
+    
+        function updateTotal() {
+            // Capturar o valor do campo #valorTotal
+            let valorTotal = document.getElementById('valorTotal').value;
+    
+            // Verificar se o valor contém um ponto decimal
+            if (valorTotal.includes('.')) {
+                // Substituir o ponto por vírgula
+                valorTotal = valorTotal.replace('.', ',');
+            }
+    
+            // Atualizar o conteúdo do elemento #total
+            document.getElementById('total').innerHTML = `
+                <label for="valorTotal">Valor Total:</label>
+                <input type="text" id="valorTotal" step="0.01" placeholder="Digite o valor total" value="${valorTotal}">
+                <button id="update-total-btn" onclick="updateTotal()"><i class="fas fa-sync-alt"></i> Atualizar Total</button>
+            `;
+        }
+    
+        async function exportToPDF() {
+            const cliente = document.getElementById('cliente').value;
+            const telefone = document.getElementById('telefone').value;
+            const endereco = document.getElementById('endereco').value;
+            const tipo = document.getElementById('tipo').value;
+            const itens = [];
+            const itemElements = document.querySelectorAll('.item-container');
+            itemElements.forEach(item => {
+                const descricao = item.querySelector('.item').value;
+                const valor = item.querySelector('.valor').value;
+                const hasValue = item.querySelector('.has-value').checked;
+                if (hasValue) {
+                    itens.push({ descricao, valor });
+                } else {
+                    itens.push({ descricao, valor: '' });
+                }
+            });
+            const total = document.getElementById('valorTotal').value || itens.reduce((acc, cur) => acc + parseFloat(cur.valor || 0), 0).toFixed(2);
+            const observacoes = document.getElementById('observacoes').value; // Captura as observações
+    
+            document.getElementById('pdf-title').textContent = tipo;
+            document.getElementById('pdf-cliente').textContent = cliente;
+            document.getElementById('pdf-telefone').textContent = telefone;
+            document.getElementById('pdf-endereco').textContent = endereco;
+            document.getElementById('pdf-total').textContent = total;
+            document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('pt-BR');
+            document.getElementById('pdf-observacoes').textContent = observacoes; // Exibe as observações no PDF
+    
+            const pdfItensContainer = document.getElementById('pdf-itens');
+            pdfItensContainer.innerHTML = '';
+            itens.forEach((item, index) => {
+                if (item.descricao.trim() !== '') {
+                    const itemElement = document.createElement('p');
+                    itemElement.textContent = `${index + 1}. ${item.descricao}${item.valor ? `: R$ ${item.valor}` : ''}`;
+                    pdfItensContainer.appendChild(itemElement);
+                }
+            });
+    
+            const pdfContent = document.getElementById('pdf-content');
+            pdfContent.style.display = 'block';
+    
+            const canvas = await html2canvas(pdfContent);
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            doc.addImage(imgData, 'PNG', 0, 0, 210, 297);
+            doc.save(`Orçamento_${cliente}_${tipo}.pdf`);
+    
+            pdfContent.style.display = 'none';
+        }
+    
+        function previewPDF() {
+            const cliente = document.getElementById('cliente').value;
+            const telefone = document.getElementById('telefone').value;
+            const endereco = document.getElementById('endereco').value;
+            const tipo = document.getElementById('tipo').value;
+            const itens = [];
+            const itemElements = document.querySelectorAll('.item-container');
+            itemElements.forEach(item => {
+                const descricao = item.querySelector('.item').value;
+                const valor = item.querySelector('.valor').value;
+                const hasValue = item.querySelector('.has-value').checked;
+                if (hasValue) {
+                    itens.push({ descricao, valor });
+                } else {
+                    itens.push({ descricao, valor: '' });
+                }
+            });
+            const total = document.getElementById('valorTotal').value || itens.reduce((acc, cur) => acc + parseFloat(cur.valor || 0), 0).toFixed(2);
+            const observacoes = document.getElementById('observacoes').value; // Captura as observações
+    
+            document.getElementById('pdf-title').textContent = tipo;
+            document.getElementById('pdf-cliente').textContent = cliente;
+            document.getElementById('pdf-telefone').textContent = telefone;
+            document.getElementById('pdf-endereco').textContent = endereco;
+            document.getElementById('pdf-total').textContent = total;
+            document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('pt-BR');
+            document.getElementById('pdf-observacoes').textContent = observacoes; // Exibe as observações no PDF
+    
+            const pdfItensContainer = document.getElementById('pdf-itens');
+            pdfItensContainer.innerHTML = '';
+            itens.forEach((item, index) => {
+                if (item.descricao.trim() !== '') {
+                    const itemElement = document.createElement('p');
+                    itemElement.textContent = `${index + 1}. ${item.descricao}${item.valor ? `: R$ ${item.valor}` : ''}`;
+                    pdfItensContainer.appendChild(itemElement);
+                }
+            });
+    
+            const pdfContent = document.getElementById('pdf-content');
+            pdfContent.style.display = 'block';
+        }
+        function sharePDF() {
+            const cliente = document.getElementById('cliente').value;
+            const tipo = document.getElementById('tipo').value;
+            const pdfContent = document.getElementById('pdf-content');
+
+            // Criar uma imagem base64 do PDF usando html2canvas
+            html2canvas(pdfContent).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+
+                // Criar um blob do PDF para compartilhar
+                const blob = dataURItoBlob(imgData);
+                const blobUrl = URL.createObjectURL(blob);
+
+                // Criar um link temporário para o blob URL
+                const tempLink = document.createElement('a');
+                tempLink.href = blobUrl;
+                tempLink.setAttribute('download', `Orçamento_${cliente}_${tipo}.pdf`);
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+                
+                // Liberar o objeto URL criado
+                URL.revokeObjectURL(blobUrl);
+            }).catch(error => {
+                console.error('Erro ao gerar PDF:', error);
+            });
+        }
+
+        // Função para converter dados URI para Blob
+        function dataURItoBlob(dataURI) {
+            const byteString = atob(dataURI.split(',')[1]);
+            const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeString });
+        }
+
+    </script>    
+</body>
+</html>
